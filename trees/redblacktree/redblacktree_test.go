@@ -51,13 +51,45 @@ func TestRedBlackTree(t *testing.T) {
 	}
 
 	// test Keys()
-	if actualValue, expactedValue := fmt.Sprintf("%d%d%d%d%d%d%d", tree.Keys()...), "1234567"; actualValue != expactedValue {
-		t.Errorf("Got %v expected %v", actualValue, expactedValue)
+	if actualValue, expectedValue := fmt.Sprintf("%d%d%d%d%d%d%d", tree.Keys()...), "1234567"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
 	}
 
 	// test Values()
-	if actualValue, expactedValue := fmt.Sprintf("%s%s%s%s%s%s%s", tree.Values()...), "abcdefg"; actualValue != expactedValue {
-		t.Errorf("Got %v expected %v", actualValue, expactedValue)
+	if actualValue, expectedValue := fmt.Sprintf("%s%s%s%s%s%s%s", tree.Values()...), "abcdefg"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
+	}
+
+	// test Left()
+	if actualValue, expectedValue := fmt.Sprintf("%d", tree.Left().Key), "1"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
+	}
+	if actualValue, expectedValue := fmt.Sprintf("%s", tree.Left().Value), "a"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
+	}
+
+	// test Right()
+	if actualValue, expectedValue := fmt.Sprintf("%d", tree.Right().Key), "7"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
+	}
+	if actualValue, expectedValue := fmt.Sprintf("%s", tree.Right().Value), "g"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
+	}
+
+	// test Floor()
+	if node, found := tree.Floor(4); node.Key != 4 || !found {
+		t.Errorf("Got %v expected %v", node.Key, 4)
+	}
+	if node, found := tree.Floor(0); node != nil || found {
+		t.Errorf("Got %v expected %v", node, "<nil>")
+	}
+
+	// test Ceiling()
+	if node, found := tree.Ceiling(4); node.Key != 4 || !found {
+		t.Errorf("Got %v expected %v", node.Key, 4)
+	}
+	if node, found := tree.Ceiling(8); node != nil || found {
+		t.Errorf("Got %v expected %v", node, "<nil>")
 	}
 
 	// key,expectedValue,expectedFound
@@ -106,13 +138,18 @@ func TestRedBlackTree(t *testing.T) {
 	}
 
 	// Test Keys()
-	if actualValue, expactedValue := fmt.Sprintf("%d%d%d%d", tree.Keys()...), "1234"; actualValue != expactedValue {
-		t.Errorf("Got %v expected %v", actualValue, expactedValue)
+	if actualValue, expectedValue := fmt.Sprintf("%d%d%d%d", tree.Keys()...), "1234"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
 	}
 
 	// test Values()
-	if actualValue, expactedValue := fmt.Sprintf("%s%s%s%s", tree.Values()...), "abcd"; actualValue != expactedValue {
-		t.Errorf("Got %v expected %v", actualValue, expactedValue)
+	if actualValue, expectedValue := fmt.Sprintf("%s%s%s%s", tree.Values()...), "abcd"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
+	}
+
+	// test Values()
+	if actualValue, expectedValue := fmt.Sprintf("%s%s%s%s", tree.Values()...), "abcd"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
 	}
 
 	// Test Size()
@@ -152,13 +189,13 @@ func TestRedBlackTree(t *testing.T) {
 	tree.Remove(2)
 
 	// Test Keys()
-	if actualValue, expactedValue := fmt.Sprintf("%s", tree.Keys()), "[]"; actualValue != expactedValue {
-		t.Errorf("Got %v expected %v", actualValue, expactedValue)
+	if actualValue, expectedValue := fmt.Sprintf("%s", tree.Keys()), "[]"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
 	}
 
 	// test Values()
-	if actualValue, expactedValue := fmt.Sprintf("%s", tree.Values()), "[]"; actualValue != expactedValue {
-		t.Errorf("Got %v expected %v", actualValue, expactedValue)
+	if actualValue, expectedValue := fmt.Sprintf("%s", tree.Values()), "[]"; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
 	}
 
 	// Test Size()
@@ -180,6 +217,147 @@ func TestRedBlackTree(t *testing.T) {
 		t.Errorf("Got %v expected %v", actualValue, true)
 	}
 
+	// test Left()
+	if actualValue, expectedValue := fmt.Sprintf("%s", tree.Left()), "<nil>"; actualValue != expectedValue {
+		t.Errorf("Got %s expected %s", actualValue, expectedValue)
+	}
+
+	// test Right()
+	if actualValue, expectedValue := fmt.Sprintf("%s", tree.Right()), "<nil>"; actualValue != expectedValue {
+		t.Errorf("Got %s expected %s", actualValue, expectedValue)
+	}
+
+	// test Floor()
+	if node, found := tree.Floor(1); node != nil || found {
+		t.Errorf("Got %v expected %v", node, "<nil>")
+	}
+
+	// test Ceiling()
+	if node, found := tree.Ceiling(1); node != nil || found {
+		t.Errorf("Got %v expected %v", node, "<nil>")
+	}
+}
+
+func TestRedBlackTreeIterator(t *testing.T) {
+	tree := NewWithIntComparator()
+
+	// insertions
+	tree.Put(5, "e")
+	tree.Put(6, "f")
+	tree.Put(7, "g")
+	tree.Put(3, "c")
+	tree.Put(4, "d")
+	tree.Put(1, "x")
+	tree.Put(2, "b")
+	tree.Put(1, "a") //overwrite
+
+	// Iterator
+	it := tree.Iterator()
+	count := 0
+	for it.Next() {
+		count += 1
+		index := it.Key()
+		switch index {
+		case count:
+			if actualValue, expectedValue := index, count; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		default:
+			if actualValue, expectedValue := index, count; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		}
+	}
+	if actualValue, expectedValue := count, 7; actualValue != expectedValue {
+		t.Errorf("Size different. Got %v expected %v", actualValue, expectedValue)
+	}
+
+	// Iterator
+	tree.Clear()
+	tree.Put(3, "c")
+	tree.Put(1, "a")
+	tree.Put(2, "b")
+	it = tree.Iterator()
+	count = 0
+	for it.Next() {
+		count += 1
+		index := it.Key()
+		switch index {
+		case count:
+			if actualValue, expectedValue := index, count; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		default:
+			if actualValue, expectedValue := index, count; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		}
+	}
+	if actualValue, expectedValue := count, 3; actualValue != expectedValue {
+		t.Errorf("Size different. Got %v expected %v", actualValue, expectedValue)
+	}
+
+	// Iterator
+	tree.Clear()
+	tree.Put(1, "a")
+	it = tree.Iterator()
+	count = 0
+	for it.Next() {
+		count += 1
+		index := it.Key()
+		switch index {
+		case count:
+			if actualValue, expectedValue := index, count; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		default:
+			if actualValue, expectedValue := index, count; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		}
+	}
+	if actualValue, expectedValue := count, 1; actualValue != expectedValue {
+		t.Errorf("Size different. Got %v expected %v", actualValue, expectedValue)
+	}
+
+	// Iterator on empty
+	tree.Clear()
+	it = tree.Iterator()
+	for it.Next() {
+		t.Errorf("Shouldn't iterate on empty stack")
+	}
+
+	// Iterator (from image)
+	tree.Clear()
+	tree.Put(13, 5)
+	tree.Put(8, 3)
+	tree.Put(17, 7)
+	tree.Put(1, 1)
+	tree.Put(11, 4)
+	tree.Put(15, 6)
+	tree.Put(25, 9)
+	tree.Put(6, 2)
+	tree.Put(22, 8)
+	tree.Put(27, 10)
+	it = tree.Iterator()
+	count = 0
+	for it.Next() {
+		count += 1
+		value := it.Value()
+		switch value {
+		case count:
+			if actualValue, expectedValue := value, count; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		default:
+			if actualValue, expectedValue := value, count; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		}
+	}
+	if actualValue, expectedValue := count, 10; actualValue != expectedValue {
+		t.Errorf("Size different. Got %v expected %v", actualValue, expectedValue)
+	}
 }
 
 func BenchmarkRedBlackTree(b *testing.B) {

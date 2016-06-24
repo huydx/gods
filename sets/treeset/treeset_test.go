@@ -61,8 +61,8 @@ func TestTreeSet(t *testing.T) {
 
 	// repeat 10 time since map in golang has a random iteration order each time and we want to make sure that the set is ordered
 	for i := 1; i <= 10; i++ {
-		if actualValue, expactedValue := fmt.Sprintf("%d%d%d", set.Values()...), "123"; actualValue != expactedValue {
-			t.Errorf("Got %v expected %v", actualValue, expactedValue)
+		if actualValue, expectedValue := fmt.Sprintf("%d%d%d", set.Values()...), "123"; actualValue != expectedValue {
+			t.Errorf("Got %v expected %v", actualValue, expectedValue)
 		}
 	}
 
@@ -82,7 +82,130 @@ func TestTreeSet(t *testing.T) {
 	if actualValue := set.Empty(); actualValue != true {
 		t.Errorf("Got %v expected %v", actualValue, true)
 	}
+}
 
+func TestTreeSetEnumerableAndIterator(t *testing.T) {
+	set := NewWithStringComparator()
+	set.Add("c", "a", "b")
+
+	// Each
+	set.Each(func(index int, value interface{}) {
+		switch index {
+		case 0:
+			if actualValue, expectedValue := value, "a"; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		case 1:
+			if actualValue, expectedValue := value, "b"; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		case 2:
+			if actualValue, expectedValue := value, "c"; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		default:
+			t.Errorf("Too many")
+		}
+	})
+
+	// Map
+	mappedSet := set.Map(func(index int, value interface{}) interface{} {
+		return "mapped: " + value.(string)
+	})
+	if actualValue, expectedValue := mappedSet.Contains("mapped: a", "mapped: b", "mapped: c"), true; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
+	}
+	if actualValue, expectedValue := mappedSet.Contains("mapped: a", "mapped: b", "mapped: x"), false; actualValue != expectedValue {
+		t.Errorf("Got %v expected %v", actualValue, expectedValue)
+	}
+	if mappedSet.Size() != 3 {
+		t.Errorf("Got %v expected %v", mappedSet.Size(), 3)
+	}
+
+	// Select
+	selectedSet := set.Select(func(index int, value interface{}) bool {
+		return value.(string) >= "a" && value.(string) <= "b"
+	})
+	if actualValue, expectedValue := selectedSet.Contains("a", "b"), true; actualValue != expectedValue {
+		fmt.Println("A: ", mappedSet.Contains("b"))
+		t.Errorf("Got %v (%v) expected %v (%v)", actualValue, selectedSet.Values(), expectedValue, "[a b]")
+	}
+	if actualValue, expectedValue := selectedSet.Contains("a", "b", "c"), false; actualValue != expectedValue {
+		t.Errorf("Got %v (%v) expected %v (%v)", actualValue, selectedSet.Values(), expectedValue, "[a b]")
+	}
+	if selectedSet.Size() != 2 {
+		t.Errorf("Got %v expected %v", selectedSet.Size(), 3)
+	}
+
+	// Any
+	any := set.Any(func(index int, value interface{}) bool {
+		return value.(string) == "c"
+	})
+	if any != true {
+		t.Errorf("Got %v expected %v", any, true)
+	}
+	any = set.Any(func(index int, value interface{}) bool {
+		return value.(string) == "x"
+	})
+	if any != false {
+		t.Errorf("Got %v expected %v", any, false)
+	}
+
+	// All
+	all := set.All(func(index int, value interface{}) bool {
+		return value.(string) >= "a" && value.(string) <= "c"
+	})
+	if all != true {
+		t.Errorf("Got %v expected %v", all, true)
+	}
+	all = set.All(func(index int, value interface{}) bool {
+		return value.(string) >= "a" && value.(string) <= "b"
+	})
+	if all != false {
+		t.Errorf("Got %v expected %v", all, false)
+	}
+
+	// Find
+	foundIndex, foundValue := set.Find(func(index int, value interface{}) bool {
+		return value.(string) == "c"
+	})
+	if foundValue != "c" || foundIndex != 2 {
+		t.Errorf("Got %v at %v expected %v at %v", foundValue, foundIndex, "c", 2)
+	}
+	foundIndex, foundValue = set.Find(func(index int, value interface{}) bool {
+		return value.(string) == "x"
+	})
+	if foundValue != nil || foundIndex != -1 {
+		t.Errorf("Got %v at %v expected %v at %v", foundValue, foundIndex, nil, nil)
+	}
+
+	// Iterator
+	it := set.Iterator()
+	for it.Next() {
+		index := it.Index()
+		value := it.Value()
+		switch index {
+		case 0:
+			if actualValue, expectedValue := value, "a"; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		case 1:
+			if actualValue, expectedValue := value, "b"; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		case 2:
+			if actualValue, expectedValue := value, "c"; actualValue != expectedValue {
+				t.Errorf("Got %v expected %v", actualValue, expectedValue)
+			}
+		default:
+			t.Errorf("Too many")
+		}
+	}
+	set.Clear()
+	it = set.Iterator()
+	for it.Next() {
+		t.Errorf("Shouldn't iterate on empty set")
+	}
 }
 
 func BenchmarkTreeSet(b *testing.B) {
